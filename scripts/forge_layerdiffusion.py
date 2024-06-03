@@ -5,7 +5,11 @@ import torch
 import numpy as np
 import copy
 
+from PIL import Image
+
+from modules import images
 from modules import scripts
+from modules.shared import opts
 from modules.processing import StableDiffusionProcessing
 from lib_layerdiffusion.enums import ResizeMode
 from lib_layerdiffusion.utils import rgba2rgbfp32, to255unit8, crop_and_resize_image, forge_clip_encode
@@ -357,3 +361,19 @@ class LayerDiffusionForForge(scripts.Script):
         p.sd_model.forge_objects.unet = unet
         p.sd_model.forge_objects.vae = vae
         return
+
+    def postprocess(self, p, processed, enabled, *args):
+        if not enabled:
+            return
+
+        for i, image_array in enumerate(processed.extra_images):
+            images.save_image(
+                Image.fromarray(image_array),
+                p.outpath_samples,
+                "transparent",
+                processed.seed + i,
+                processed.prompt,
+                opts.samples_format,
+                info=processed.info,
+                p=p,
+            )
